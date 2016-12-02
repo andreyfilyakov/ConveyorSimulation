@@ -160,10 +160,11 @@ public class Simulation {
 				robot.setBusy(true, time, nearestQueue.poll(), queuePosition + 1);
 				int deliveryTime = timeBetweenPositions(queuePosition, robot.getPosition());
 				deliveryTime += uniform(t4, t5);
-				deliveryTime += t1;
+				deliveryTime += timeBetweenPositions(queuePosition, queuePosition + 1);
 				deliveryTime += uniform(t4, t5);
 				eventList.plan(new Event(queuePosition * 2 + 1, time + deliveryTime));
 			}
+
 		}
 	}
 
@@ -183,7 +184,7 @@ public class Simulation {
 				robot.setBusy(true, time, queueList.get(2).poll(), 2);
 				int deliveryTime = timeBetweenPositions(1, robot.getPosition());
 				deliveryTime += uniform(t4, t5);
-				deliveryTime += t1;
+				deliveryTime += t2;
 				deliveryTime += uniform(t4, t5);
 				eventList.plan(new Event(3, time + deliveryTime));
 			}
@@ -203,7 +204,7 @@ public class Simulation {
 				robot.setBusy(true, time, queueList.get(4).poll(), 3);
 				int deliveryTime = timeBetweenPositions(2, robot.getPosition());
 				deliveryTime += uniform(t4, t5);
-				deliveryTime += t1;
+				deliveryTime += t3;
 				deliveryTime += uniform(t4, t5);
 				eventList.plan(new Event(5, time + deliveryTime));
 			}
@@ -218,12 +219,11 @@ public class Simulation {
 	}
 
 	public static int uniform(int average, int deviation) {
-		return average + random.nextInt(deviation * 2) - deviation;
+		return (int) (average + random.nextDouble() * 2 * deviation - deviation);
 	}
 
 	public static int exponential(int average) {
-		return (int) (average - 1.0 * Math.log(random.nextDouble())); // B=1.0
-																		// ???
+		return (int) (average - 1.0 * Math.log(random.nextDouble()));
 	}
 
 	public static int normal(int average, int deviation) {
@@ -238,9 +238,7 @@ public class Simulation {
 		}
 
 		double z1 = x * Math.pow((-2 * Math.log(s) / s), 0.5), z2 = y * Math.pow((-2 * Math.log(s) / s), 0.5);
-		return (int) (average + deviation * (time % 2 > 0 ? z1 : z2)); // select
-																		// z1/z2
-																		// ???
+		return (int) (average + deviation * (time % 2 > 0 ? z1 : z2));
 	}
 
 	public static int timeBetweenPositions(int position1, int position2) {

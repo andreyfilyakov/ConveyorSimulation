@@ -28,7 +28,7 @@ public class Histogram extends ApplicationFrame {
 
 	private HistogramDataset createDataset(List<Detail> details) {
 		double data[] = new double[details.size()];
-		for (int i = 0; i < details.size(); i++) {
+		for (int i = 0; i < details.size();i++) {
 			data[i] = details.get(i).getGeneralTime() / 60.0; // time in minutes
 		}
 		HistogramDataset dataset = new HistogramDataset();
