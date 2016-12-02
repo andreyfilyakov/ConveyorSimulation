@@ -223,7 +223,13 @@ public class Simulation {
 	}
 
 	public static int exponential(int average) {
-		return (int) (average - 1.0 * Math.log(random.nextDouble()));
+		int sign = random.nextInt(2);
+		if (sign == 0) {
+			return (int) (average - Math.log(random.nextDouble()));
+		} else {
+			return (int) (average + Math.log(random.nextDouble()));
+		}
+
 	}
 
 	public static int normal(int average, int deviation) {
