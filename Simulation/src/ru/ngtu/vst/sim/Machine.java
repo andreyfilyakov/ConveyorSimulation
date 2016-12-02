@@ -2,15 +2,15 @@ package ru.ngtu.vst.sim;
 
 public class Machine {
 	private boolean busy = false;
-	private int startTime = 0;
-	private int workTime = 0;
+	private double startTime = 0;
+	private double workTime = 0;
 	private Detail detail = null;
 
 	public boolean isBusy() {
 		return busy;
 	}
 
-	public void setBusy(boolean busy, int currentTime, Detail detail) {
+	public void setBusy(boolean busy, double currentTime, Detail detail) {
 		this.busy = busy;
 		this.detail = detail;
 		if (this.busy) {
@@ -20,7 +20,7 @@ public class Machine {
 		}
 	}
 
-	public int getWorkTime() {
+	public double getWorkTime() {
 		return this.workTime;
 	}
 	

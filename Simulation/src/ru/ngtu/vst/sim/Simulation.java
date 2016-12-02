@@ -9,16 +9,16 @@ import java.util.Random;
 import org.jfree.ui.RefineryUtilities;
 
 public class Simulation {
-	public static int time = 0;
+	public static double time = 0;
 	public static final List<Queue<Detail>> queueList = new ArrayList<Queue<Detail>>();
 	public static final List<Integer> maxQueueSizes = new ArrayList<Integer>();
 	public static final Random random = new Random();
-	public static final int simulationTime = 8 * 60 * 60;
+	public static final double simulationTime = 8 * 60 * 60;
 	public static final List<Machine> machineList = new ArrayList<Machine>();
 	public static final RobotList robotList = new RobotList();
 	public static final EventList eventList = new EventList();
 	public static final List<Detail> readyDetails = new ArrayList<Detail>();
-	public static final int t0 = 70, t1 = 10, t2 = 15, t3 = 20, t4 = 15, t5 = 3, t6 = 140, t7 = 20, t8 = 180;
+	public static final double t0 = 70, t1 = 10, t2 = 15, t3 = 20, t4 = 15, t5 = 3, t6 = 140, t7 = 20, t8 = 180;
 
 	public static void main(String[] args) {
 		for (int i = 0; i < 5; i++) {
@@ -109,7 +109,7 @@ public class Simulation {
 		Robot robot = robotList.getNearestRobot(0);
 		if (robot != null) {
 			robot.setBusy(true, time, queueList.get(0).poll(), 1);
-			int deliveryTime = timeBetweenPositions(0, robot.getPosition());
+			double deliveryTime = timeBetweenPositions(0, robot.getPosition());
 			deliveryTime += uniform(t4, t5);
 			deliveryTime += t1;
 			deliveryTime += uniform(t4, t5);
@@ -132,7 +132,7 @@ public class Simulation {
 					}
 				} else {
 					machineList.get(0).setBusy(true, time, detail);
-					int treatmentTime = normal(t6, t7);
+					double treatmentTime = normal(t6, t7);
 					eventList.plan(new Event(2, time + treatmentTime));
 				}
 				break;
@@ -144,7 +144,7 @@ public class Simulation {
 					}
 				} else {
 					machineList.get(1).setBusy(true, time, detail);
-					int treatmentTime = exponential(t8);
+					double treatmentTime = exponential(t8);
 					eventList.plan(new Event(4, time + treatmentTime));
 				}
 				break;
@@ -158,7 +158,7 @@ public class Simulation {
 			if (nearestQueue != null) {
 				int queuePosition = queueList.indexOf(nearestQueue) / 2;
 				robot.setBusy(true, time, nearestQueue.poll(), queuePosition + 1);
-				int deliveryTime = timeBetweenPositions(queuePosition, robot.getPosition());
+				double deliveryTime = timeBetweenPositions(queuePosition, robot.getPosition());
 				deliveryTime += uniform(t4, t5);
 				deliveryTime += timeBetweenPositions(queuePosition, queuePosition + 1);
 				deliveryTime += uniform(t4, t5);
@@ -182,7 +182,7 @@ public class Simulation {
 			}
 			if (robot != null) {
 				robot.setBusy(true, time, queueList.get(2).poll(), 2);
-				int deliveryTime = timeBetweenPositions(1, robot.getPosition());
+				double deliveryTime = timeBetweenPositions(1, robot.getPosition());
 				deliveryTime += uniform(t4, t5);
 				deliveryTime += t2;
 				deliveryTime += uniform(t4, t5);
@@ -191,7 +191,7 @@ public class Simulation {
 
 			if (queueList.get(1).size() > 0) {
 				machine.setBusy(true, time, queueList.get(1).poll());
-				int treatmentTime = normal(t6, t7);
+				double treatmentTime = normal(t6, t7);
 				eventList.plan(new Event(2, time + treatmentTime));
 			}
 			break;
@@ -202,7 +202,7 @@ public class Simulation {
 			}
 			if (robot != null) {
 				robot.setBusy(true, time, queueList.get(4).poll(), 3);
-				int deliveryTime = timeBetweenPositions(2, robot.getPosition());
+				double deliveryTime = timeBetweenPositions(2, robot.getPosition());
 				deliveryTime += uniform(t4, t5);
 				deliveryTime += t3;
 				deliveryTime += uniform(t4, t5);
@@ -211,28 +211,28 @@ public class Simulation {
 
 			if (queueList.get(3).size() > 0) {
 				machine.setBusy(true, time, queueList.get(3).poll());
-				int treatmentTime = exponential(t8);
+				double treatmentTime = exponential(t8);
 				eventList.plan(new Event(4, time + treatmentTime));
 			}
 			break;
 		}
 	}
 
-	public static int uniform(int average, int deviation) {
-		return (int) (average + random.nextDouble() * 2 * deviation - deviation);
+	public static double uniform(double average, double deviation) {
+		return average + random.nextDouble() * 2 * deviation - deviation;
 	}
 
-	public static int exponential(int average) {
+	public static double exponential(double average) {
 		int sign = random.nextInt(2);
 		if (sign == 0) {
-			return (int) (average - Math.log(random.nextDouble()));
+			return average - Math.log(random.nextDouble());
 		} else {
-			return (int) (average + Math.log(random.nextDouble()));
+			return average + Math.log(random.nextDouble());
 		}
 
 	}
 
-	public static int normal(int average, int deviation) {
+	public static double normal(double average, double deviation) {
 		double x, y, s;
 		while (true) {
 			x = random.nextDouble() * 2 - 1;
@@ -244,11 +244,11 @@ public class Simulation {
 		}
 
 		double z1 = x * Math.pow((-2 * Math.log(s) / s), 0.5), z2 = y * Math.pow((-2 * Math.log(s) / s), 0.5);
-		return (int) (average + deviation * (time % 2 > 0 ? z1 : z2));
+		return average + deviation * (time % 2 > 0 ? z1 : z2);
 	}
 
-	public static int timeBetweenPositions(int position1, int position2) {
-		int result = 0;
+	public static double timeBetweenPositions(int position1, int position2) {
+		double result = 0;
 
 		if ((position1 == 0 && position2 == 1 || position1 == 1 && position2 == 0)) {
 			result = t1;

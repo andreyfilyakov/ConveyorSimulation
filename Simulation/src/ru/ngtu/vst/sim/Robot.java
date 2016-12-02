@@ -20,7 +20,7 @@ public class Robot extends Machine {
 		return this.target;
 	}
 
-	public void setBusy(boolean busy, int currentTime, Detail detail, int target) {
+	public void setBusy(boolean busy, double currentTime, Detail detail, int target) {
 		super.setBusy(busy, currentTime, detail);
 		this.target = target;
 	}

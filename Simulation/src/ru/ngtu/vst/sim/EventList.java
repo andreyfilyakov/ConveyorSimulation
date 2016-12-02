@@ -12,7 +12,7 @@ public class EventList {
 		e_list.add(e);
 		Collections.sort(e_list, new Comparator<Event>() {
 			public int compare(Event e1, Event e2) {
-				return Integer.compare(e1.getTime(), e2.getTime());
+				return Double.compare(e1.getTime(), e2.getTime());
 			}
 		});
 	}

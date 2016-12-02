@@ -9,9 +9,9 @@ public class Event {
 	// 5 - delivery of a detail to the stock
 	// 6 - finish of simulation
 	private int code;
-	private int time;
+	private double time;
 
-	Event(int code, int time) {
+	Event(int code, double time) {
 		this.code = code;
 		this.time = time;
 	}
@@ -21,7 +21,7 @@ public class Event {
 		return this.code;
 	}
 	
-	public int getTime()
+	public double getTime()
 	{
 		return this.time;
 	}
