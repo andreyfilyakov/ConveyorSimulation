@@ -16,24 +16,24 @@ public class Histogram extends ApplicationFrame {
 
 	private final int N = 20; // number of sections
 
-	public Histogram(List<Detail> details) {
-		super("Details distribution");
-		IntervalXYDataset dataset = createDataset(details);
-		JFreeChart chart = ChartFactory.createXYBarChart("Details distribution", "time, min", false, "Details count",
+	public Histogram(List<Message> messages) {
+		super("Messages distribution");
+		IntervalXYDataset dataset = createDataset(messages);
+		JFreeChart chart = ChartFactory.createXYBarChart("Messages distribution", "time, s", false, "Messages count",
 				dataset, PlotOrientation.VERTICAL, true, true, false);
 		ChartPanel panel = new ChartPanel(chart);
 		panel.setPreferredSize(new Dimension(500, 270));
 		setContentPane(panel);
 	}
 
-	private HistogramDataset createDataset(List<Detail> details) {
-		double data[] = new double[details.size()];
-		for (int i = 0; i < details.size();i++) {
-			data[i] = details.get(i).getGeneralTime() / 60.0; // time in minutes
+	private HistogramDataset createDataset(List<Message> messages) {
+		double data[] = new double[messages.size()];
+		for (int i = 0; i < messages.size();i++) {
+			data[i] = messages.get(i).getTransferTime();
 		}
 		HistogramDataset dataset = new HistogramDataset();
 		dataset.setType(HistogramType.FREQUENCY);
-		dataset.addSeries("Details count", data, N);
+		dataset.addSeries("Messages count", data, N);
 
 		return dataset;
 	}

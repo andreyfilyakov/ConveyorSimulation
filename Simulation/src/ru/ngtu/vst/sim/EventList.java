@@ -21,4 +21,15 @@ public class EventList {
 		return e_list.remove(0);
 	}
 
+	public void removeFirstEvent(int code)
+	{
+		for (int i = 0; i < e_list.size(); i++) {
+			Event event = e_list.get(i);
+			if(event.getCode()==code)
+			{
+				e_list.remove(i);
+				break;
+			}
+		}
+	}
 }

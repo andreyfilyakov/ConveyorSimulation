@@ -1,18 +1,18 @@
 package ru.ngtu.vst.sim;
 
-public class Machine {
+public class Channel {
 	private boolean busy = false;
 	private double startTime = 0;
 	private double workTime = 0;
-	private Detail detail = null;
+	private Message message = null;
 
 	public boolean isBusy() {
 		return busy;
 	}
 
-	public void setBusy(boolean busy, double currentTime, Detail detail) {
+	public void setBusy(boolean busy, double currentTime, Message message) {
 		this.busy = busy;
-		this.detail = detail;
+		this.message = message;
 		if (this.busy) {
 			this.startTime = currentTime;
 		} else {
@@ -24,8 +24,8 @@ public class Machine {
 		return this.workTime;
 	}
 	
-	public Detail getDetail()
+	public Message getMessage()
 	{
-		return this.detail;
+		return this.message;
 	}
 }
