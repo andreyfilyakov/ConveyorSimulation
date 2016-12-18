@@ -17,7 +17,7 @@ public class Simulation {
 	public static final EventList eventList = new EventList();
 	public static final Channel main = new Channel(), reserve = new Channel();
 	public static final double R = 12, dR = 6, T1 = 10, dT1 = 5, T2 = 250, dT2 = 30, T3 = 4, T4 = 80, dT4 = 15, S1 = 70,
-			S2 = 35, S3 = 0.02, K = 1*60*60;
+			S2 = 35, S3 = 0.02, K = 1 * 60 * 60;
 	public static boolean isMainActive = true;
 	public static int failCount = 0;
 	public static double profit = 0;
@@ -67,6 +67,7 @@ public class Simulation {
 		System.out.println("Average time for message (s): " + averageTime);
 		System.out.println();
 		System.out.println("Profit: " + (profit - K * S3));
+		System.out.println("Fails count: " + failCount);
 		System.out.println("Fails frequency (1/min): " + (double) failCount * 60.0 / (double) simulationTime);
 		System.out.println("Work coef of main channel: " + (double) main.getWorkTime() / (double) simulationTime);
 		System.out.println("Work coef of reserve channel: " + (double) reserve.getWorkTime() / (double) simulationTime);
@@ -82,16 +83,15 @@ public class Simulation {
 
 		if (isMainActive) {
 			if (!main.isBusy()) {
-				main.setBusy(true, time, message);
+				main.setBusy(true, time, buffer.poll());
 				eventList.plan(new Event(1, time + uniform(T1, dT1)));
 			}
 		} else {
 			if (!reserve.isBusy()) {
-				reserve.setBusy(true, time, message);
+				reserve.setBusy(true, time, buffer.poll());
 				eventList.plan(new Event(2, time + uniform(T1, dT1)));
 			}
 		}
-
 	}
 
 	public static void finishTransferOnMain() {
@@ -123,6 +123,7 @@ public class Simulation {
 	}
 
 	public static void getFail() {
+		eventList.plan(new Event(3, time + uniform(T2, dT2) + K));
 		isMainActive = false;
 		if (main.isBusy()) {
 			failCount++;
@@ -138,7 +139,6 @@ public class Simulation {
 
 	public static void finishRepair() {
 		isMainActive = true;
-		eventList.plan(new Event(3, time + uniform(T2, dT2) + K));
 
 		if (buffer.size() > 0) {
 			main.setBusy(true, time, buffer.poll());
