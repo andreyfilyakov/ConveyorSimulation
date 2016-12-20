@@ -6,63 +6,37 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 
-import org.jfree.ui.RefineryUtilities;
-
 public class Simulation {
 	public static double time = 0;
-	public static final List<Queue<Detail>> queueList = new ArrayList<Queue<Detail>>();
-	public static final List<Integer> maxQueueSizes = new ArrayList<Integer>();
+	public static final int n1 = 5, n2 = 10, t1 = 180, t2 = 30, t3 = 60, t4 = 40 * 60, t5 = 10 * 60, k = 10, v1 = 40,
+			v2 = 5;
+	public static final ExecutorList channelList = new ExecutorList(n1), carList = new ExecutorList(n2);
+	public static final Queue<Request> queue = new LinkedList<Request>();
 	public static final Random random = new Random();
-	public static final double simulationTime = 8 * 60 * 60;
-	public static final List<Machine> machineList = new ArrayList<Machine>();
-	public static final RobotList robotList = new RobotList();
+	public static final double simulationTime = 24 * 60 * 60;
+	public static final List<Request> executedRequests = new ArrayList<Request>();
 	public static final EventList eventList = new EventList();
-	public static final List<Detail> readyDetails = new ArrayList<Detail>();
-	public static final double t0 = 70, t1 = 10, t2 = 15, t3 = 20, t4 = 15, t5 = 3, t6 = 140, t7 = 20, t8 = 180;
+	public static double s1 = 2, s2 = 0.5, s3 = 10, profit = -(n1 + n2) * s3;
 
 	public static void main(String[] args) {
-		for (int i = 0; i < 5; i++) {
-			queueList.add(new LinkedList<Detail>());
-			maxQueueSizes.add(0);
-		}
-		for (int i = 0; i < 2; i++) {
-			machineList.add(new Machine());
-		}
-
-		eventList.plan(new Event(0, exponential(t0)));
-		eventList.plan(new Event(6, simulationTime));
+		eventList.plan(new Event(0, exponential(t1)));
+		eventList.plan(new Event(3, simulationTime));
 
 		boolean finish = false;
 		while (true) {
 			Event currentEvent = eventList.getEvent();
 			time = currentEvent.getTime();
-			// 0 - getting of a detail
-			// 1 - delivery of a detail to the 1st machine
-			// 2 - completion of the treatment in the 1st machine
-			// 3 - delivery of a detail to the 2nd machine
-			// 4 - completion of the treatment in the 2nd machine
-			// 5 - delivery of a detail to the stock
-			// 6 - finish of simulation
 			switch (currentEvent.getCode()) {
 			case 0:
-				handleDetailGetting();
+				getRequest();
 				break;
 			case 1:
-				handleDeliveryToPosition(1);
+				addToQueue(currentEvent.getExecutorId());
 				break;
 			case 2:
-				handleTreatmentOnMachine(1);
+				finishDelivery(currentEvent.getExecutorId());
 				break;
 			case 3:
-				handleDeliveryToPosition(2);
-				break;
-			case 4:
-				handleTreatmentOnMachine(2);
-				break;
-			case 5:
-				handleDeliveryToPosition(3);
-				break;
-			case 6:
 				finish = true;
 				break;
 			}
@@ -73,149 +47,63 @@ public class Simulation {
 		}
 
 		double averageTime = 0;
-		for (Detail detail : readyDetails) {
-			averageTime += detail.getGeneralTime();
+		for (Request request : executedRequests) {
+			averageTime += request.getExecutionTime();
 		}
-		averageTime /= readyDetails.size();
+		averageTime /= executedRequests.size();
 
-		System.out.println("Details count: " + readyDetails.size());
-		System.out.println("Average time for detail (min): " + averageTime / 60);
+		System.out.println("Requests count: " + executedRequests.size());
+		System.out.println("Average time for request (min): " + averageTime / 60.0);
 		System.out.println();
-		for (Robot robot : robotList.getRobotList()) {
-			System.out.println("Work coef of robot #" + robotList.getRobotList().indexOf(robot) + ": "
-					+ (double) robot.getWorkTime() / (double) simulationTime);
-		}
-		for (Machine machine : machineList) {
-			System.out.println("Work coef of machine #" + machineList.indexOf(machine) + ": "
-					+ (double) machine.getWorkTime() / (double) simulationTime);
+		for (Executor car : carList.getExecutorList()) {
+			System.out.println("Work coef of car #" + carList.getExecutorList().indexOf(car) + ": "
+					+ car.getWorkTime() / simulationTime);
 		}
 		System.out.println();
-		for (int i = 0; i < maxQueueSizes.size(); i++) {
-			int size = maxQueueSizes.get(i);
-			System.out.println("Max size of queue #" + i + ": " + size);
-		}
-
-		showHistogram(readyDetails);
+		System.out.println("Profit (rub): " + profit);
 	}
 
-	public static void handleDetailGetting() {
-		eventList.plan(new Event(0, exponential(time + t0)));
-		Detail detail = new Detail(time);
-		queueList.get(0).add(detail);
-		if (maxQueueSizes.get(0) < queueList.get(0).size()) {
-			maxQueueSizes.set(0, queueList.get(0).size());
-		}
+	public static void getRequest() {
+		eventList.plan(new Event(0, time + exponential(t1)));
 
-		Robot robot = robotList.getNearestRobot(0);
-		if (robot != null) {
-			robot.setBusy(true, time, queueList.get(0).poll(), 1);
-			double deliveryTime = timeBetweenPositions(0, robot.getPosition());
-			deliveryTime += uniform(t4, t5);
-			deliveryTime += t1;
-			deliveryTime += uniform(t4, t5);
-			eventList.plan(new Event(1, time + deliveryTime));
+		double callTime = 0;
+		for (int i = 0; i < k; i++) {
+			callTime += t2;
+			Executor channel = channelList.getExecutor();
+			if (channel == null || queue.size() > n2) {
+				callTime += t3;
+			} else {
+				Request request = new Request(time + callTime);
+				channel.setBusy(true, time + callTime, request);
+				eventList.plan(new Event(1, time + callTime, channel.getId()));
+				break;
+			}
 		}
 	}
 
-	public static void handleDeliveryToPosition(int position) {
-		Robot robot = robotList.getRobotWithTarget(position);
-		if (robot != null) {
-			Detail detail = robot.getDetail();
-			robot.setPosition(position);
-			robot.setBusy(false, time, null, -1);
-			switch (position) {
-			case 1:
-				if (machineList.get(0).isBusy()) {
-					queueList.get(1).add(detail);
-					if (maxQueueSizes.get(1) < queueList.get(1).size()) {
-						maxQueueSizes.set(1, queueList.get(1).size());
-					}
-				} else {
-					machineList.get(0).setBusy(true, time, detail);
-					double treatmentTime = normal(t6, t7);
-					eventList.plan(new Event(2, time + treatmentTime));
-				}
-				break;
-			case 2:
-				if (machineList.get(1).isBusy()) {
-					queueList.get(3).add(detail);
-					if (maxQueueSizes.get(3) < queueList.get(3).size()) {
-						maxQueueSizes.set(3, queueList.get(3).size());
-					}
-				} else {
-					machineList.get(1).setBusy(true, time, detail);
-					double treatmentTime = exponential(t8);
-					eventList.plan(new Event(4, time + treatmentTime));
-				}
-				break;
-			case 3:
-				detail.endTreatment(time);
-				readyDetails.add(detail);
-				break;
-			}
+	public static void addToQueue(int executorId) {
+		Executor channel = channelList.getExecutor(executorId);
+		Request request = channel.getRequest();
+		channel.setBusy(false, time, null);
+		queue.add(request);
+		profit += s1;
 
-			Queue<Detail> nearestQueue = robotList.getNearestQueue(robot.getPosition(), queueList);
-			if (nearestQueue != null) {
-				int queuePosition = queueList.indexOf(nearestQueue) / 2;
-				robot.setBusy(true, time, nearestQueue.poll(), queuePosition + 1);
-				double deliveryTime = timeBetweenPositions(queuePosition, robot.getPosition());
-				deliveryTime += uniform(t4, t5);
-				deliveryTime += timeBetweenPositions(queuePosition, queuePosition + 1);
-				deliveryTime += uniform(t4, t5);
-				eventList.plan(new Event(queuePosition * 2 + 1, time + deliveryTime));
-			}
-
+		Executor car = carList.getExecutor();
+		if (car != null) {
+			car.setBusy(true, time, queue.poll());
+			double deliveryTime = uniform(t4, t5);
+			eventList.plan(new Event(2, time + getDistance() / uniform(v1, v2) * 60 * 60 + deliveryTime, car.getId()));
+			double distance = deliveryTime * uniform(v1, v2) / 60 / 60;
+			profit += distance * s2;
 		}
 	}
 
-	public static void handleTreatmentOnMachine(int machineNumber) {
-		Machine machine = machineList.get(machineNumber - 1);
-		Detail detail = machine.getDetail();
-		machine.setBusy(false, time, null);
-		Robot robot = robotList.getNearestRobot(machineNumber);
-
-		switch (machineNumber) {
-		case 1:
-			queueList.get(2).add(detail);
-			if (maxQueueSizes.get(2) < queueList.get(2).size()) {
-				maxQueueSizes.set(2, queueList.get(2).size());
-			}
-			if (robot != null) {
-				robot.setBusy(true, time, queueList.get(2).poll(), 2);
-				double deliveryTime = timeBetweenPositions(1, robot.getPosition());
-				deliveryTime += uniform(t4, t5);
-				deliveryTime += t2;
-				deliveryTime += uniform(t4, t5);
-				eventList.plan(new Event(3, time + deliveryTime));
-			}
-
-			if (queueList.get(1).size() > 0) {
-				machine.setBusy(true, time, queueList.get(1).poll());
-				double treatmentTime = normal(t6, t7);
-				eventList.plan(new Event(2, time + treatmentTime));
-			}
-			break;
-		case 2:
-			queueList.get(4).add(detail);
-			if (maxQueueSizes.get(4) < queueList.get(4).size()) {
-				maxQueueSizes.set(4, queueList.get(4).size());
-			}
-			if (robot != null) {
-				robot.setBusy(true, time, queueList.get(4).poll(), 3);
-				double deliveryTime = timeBetweenPositions(2, robot.getPosition());
-				deliveryTime += uniform(t4, t5);
-				deliveryTime += t3;
-				deliveryTime += uniform(t4, t5);
-				eventList.plan(new Event(5, time + deliveryTime));
-			}
-
-			if (queueList.get(3).size() > 0) {
-				machine.setBusy(true, time, queueList.get(3).poll());
-				double treatmentTime = exponential(t8);
-				eventList.plan(new Event(4, time + treatmentTime));
-			}
-			break;
-		}
+	public static void finishDelivery(int executorId) {
+		Executor car = carList.getExecutor(executorId);
+		Request request = car.getRequest();
+		car.setBusy(false, time, null);
+		request.endExecution(time);
+		executedRequests.add(request);
 	}
 
 	public static double uniform(double average, double deviation) {
@@ -229,48 +117,25 @@ public class Simulation {
 		} else {
 			return average + Math.log(random.nextDouble());
 		}
-
 	}
 
-	public static double normal(double average, double deviation) {
-		double x, y, s;
-		while (true) {
-			x = random.nextDouble() * 2 - 1;
-			y = random.nextDouble() * 2 - 1;
-			s = Math.pow(x, 2) + Math.pow(y, 2);
-			if (s > 0 && s <= 1) {
-				break;
-			}
+	private static int getDistance() {
+		int result = 0;
+		double ran = random.nextDouble();
+
+		if (ran < 0.1) {
+			result = 5;
+		} else if (ran < 0.3) {
+			result = 8;
+		} else if (ran < 0.55) {
+			result = 9;
+		} else if (ran < 0.72) {
+			result = 11;
+		} else if (ran < 0.95) {
+			result = 12;
+		} else {
+			result = 20;
 		}
-
-		double z1 = x * Math.pow((-2 * Math.log(s) / s), 0.5), z2 = y * Math.pow((-2 * Math.log(s) / s), 0.5);
-		return average + deviation * (time % 2 > 0 ? z1 : z2);
-	}
-
-	public static double timeBetweenPositions(int position1, int position2) {
-		double result = 0;
-
-		if ((position1 == 0 && position2 == 1 || position1 == 1 && position2 == 0)) {
-			result = t1;
-		} else if (position1 == 0 && position2 == 2 || position1 == 2 && position2 == 0) {
-			result = t1 + t2;
-		} else if (position1 == 0 && position2 == 3 || position1 == 3 && position2 == 0) {
-			result = t1 + t2 + t3;
-		} else if (position1 == 1 && position2 == 2 || position1 == 2 && position2 == 1) {
-			result = t2;
-		} else if (position1 == 1 && position2 == 3 || position1 == 3 && position2 == 1) {
-			result = t2 + t3;
-		} else if (position1 == 2 && position2 == 3 || position1 == 3 && position2 == 2) {
-			result = t3;
-		}
-
 		return result;
-	}
-
-	private static void showHistogram(List<Detail> details) {
-		Histogram histogram = new Histogram(details);
-		histogram.pack();
-		RefineryUtilities.centerFrameOnScreen(histogram);
-		histogram.setVisible(true);
 	}
 }
