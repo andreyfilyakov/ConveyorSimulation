@@ -8,15 +8,16 @@ import java.util.Random;
 
 public class Simulation {
 	public static double time = 0;
-	public static final int n1 = 5, n2 = 10, t1 = 180, t2 = 30, t3 = 60, t4 = 40 * 60, t5 = 10 * 60, k = 10, v1 = 40,
-			v2 = 5;
+	public static final int n1 = 5, n2 = 10, k = 10, v1 = 40, v2 = 5;
 	public static final ExecutorList channelList = new ExecutorList(n1), carList = new ExecutorList(n2);
 	public static final Queue<Request> queue = new LinkedList<Request>();
 	public static final Random random = new Random();
 	public static final double simulationTime = 24 * 60 * 60;
 	public static final List<Request> executedRequests = new ArrayList<Request>();
 	public static final EventList eventList = new EventList();
-	public static double s1 = 2, s2 = 0.5, s3 = 10, profit = -(n1 + n2) * s3;
+	public static double s1 = 2, s2 = 0.5, s3 = 10, profit = -(n1 + n2) * s3, t1 = 180, t2 = 30, t3 = 60, t4 = 40 * 60,
+			t5 = 10 * 60;
+	public static int requestCount = 0;
 
 	public static void main(String[] args) {
 		eventList.plan(new Event(0, exponential(t1)));
@@ -52,20 +53,21 @@ public class Simulation {
 		}
 		averageTime /= executedRequests.size();
 
-		System.out.println("Requests count: " + executedRequests.size());
+		System.out.println("Input requests count: " + requestCount);
+		System.out.println("Executed requests count: " + executedRequests.size());
 		System.out.println("Average time for request (min): " + averageTime / 60.0);
 		System.out.println();
+		double averageCoef = 0;
 		for (Executor car : carList.getExecutorList()) {
-			System.out.println("Work coef of car #" + carList.getExecutorList().indexOf(car) + ": "
-					+ car.getWorkTime() / simulationTime);
+			averageCoef += car.getWorkTime() / simulationTime;
 		}
+		System.out.println("Average work coef of cars: " + averageCoef / carList.getExecutorList().size());
 		System.out.println();
 		System.out.println("Profit (rub): " + profit);
 	}
 
 	public static void getRequest() {
 		eventList.plan(new Event(0, time + exponential(t1)));
-
 		double callTime = 0;
 		for (int i = 0; i < k; i++) {
 			callTime += t2;
@@ -73,7 +75,8 @@ public class Simulation {
 			if (channel == null || queue.size() > n2) {
 				callTime += t3;
 			} else {
-				Request request = new Request(time + callTime);
+				Request request = new Request(time);
+				requestCount++;
 				channel.setBusy(true, time + callTime, request);
 				eventList.plan(new Event(1, time + callTime, channel.getId()));
 				break;
@@ -104,6 +107,14 @@ public class Simulation {
 		car.setBusy(false, time, null);
 		request.endExecution(time);
 		executedRequests.add(request);
+
+		if (queue.size() > 0) {
+			car.setBusy(true, time, queue.poll());
+			double deliveryTime = uniform(t4, t5);
+			eventList.plan(new Event(2, time + getDistance() / uniform(v1, v2) * 60 * 60 + deliveryTime, car.getId()));
+			double distance = deliveryTime * uniform(v1, v2) / 60 / 60;
+			profit += distance * s2;
+		}
 	}
 
 	public static double uniform(double average, double deviation) {
