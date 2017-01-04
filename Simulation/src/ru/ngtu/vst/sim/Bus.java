@@ -13,16 +13,14 @@ public class Bus {
 		return onRoute;
 	}
 
-	public void addPassenger(Passenger passenger) {
+	public void addPassenger(Passenger passenger, double time) {
 		this.passengers.add(passenger);
+		passenger.getToBus(time);
 	}
 
 	public void start(double time) {
 		this.onRoute = true;
 		this.startTime = time;
-		for (Passenger passenger : this.passengers) {
-			passenger.startDrive(time);
-		}
 	}
 
 	public void end(double time) {

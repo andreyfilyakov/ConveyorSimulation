@@ -9,13 +9,13 @@ import java.util.Random;
 public class Simulation {
 	public static double time = 0;
 	public static final Queue<Passenger> queue = new LinkedList<Passenger>();
-	public static final Random random = new Random();
-	public static final double simulationTime = 10 * 60;
+	public static final Random random = new Random(5);
+	public static final double simulationTime = 15*(2.0/3.0) * 60;
 	public static final EventList eventList = new EventList();
 	public static final List<Passenger> readyPassengers = new ArrayList<Passenger>();
 	public static final Bus A = new Bus(), B = new Bus();
 	public static final double t1 = 0.5, t2 = 0.2, t3 = 20, t4 = 5, t5 = 30, t6 = 5, t7 = 2, t8 = 1;
-	public static final int n = 10, l = 30, s = 2;
+	public static final int n = 25, l = 30, s = 2;
 	public static double profit = 0;
 
 	public static void main(String[] args) {
@@ -62,7 +62,7 @@ public class Simulation {
 		driveTime /= readyPassengers.size();
 
 		System.out.println("Queue time: " + queueTime);
-		System.out.println("Drive time: " + driveTime);
+		System.out.println("Common time: " + driveTime);
 		System.out.println("Profit: " + profit);
 		System.out.println("Work coef A: " + A.getWorkTime() / simulationTime);
 		System.out.println("Work coef B: " + B.getWorkTime() / simulationTime);
@@ -70,31 +70,26 @@ public class Simulation {
 
 	public static void getPassenger() {
 		eventList.plan(new Event(0, time + uniform(t1, t2)));
-		Passenger passenger = new Passenger();
 
-		if (!A.onRoute()) {
-			passenger.getToBus(time);
-			A.addPassenger(passenger);
-			profit += s;
-			if (A.getPassengers().size() == n) {
-				A.start(time);
-				eventList.plan(new Event(1, time + uniform(t3, t4) + uniform(t7, t8)));
-			}
-		} else if (!B.onRoute()) {
-			passenger.getToBus(time);
-			B.addPassenger(passenger);
-			profit += s;
-			if (B.getPassengers().size() == n) {
-				B.start(time);
-				eventList.plan(new Event(2, time + uniform(t5, t6) + uniform(t7, t8)));
+		if (queue.size() <= l) {
+			Passenger passenger = new Passenger(time);
+			queue.add(passenger);
+
+			if (!A.onRoute()) {
+				A.addPassenger(queue.poll(), time);
+				if (A.getPassengers().size() == n) {
+					A.start(time);
+					eventList.plan(new Event(1, time + uniform(t3, t4) + uniform(t7, t8)));
+				}
+			} else if (!B.onRoute()) {
+				B.addPassenger(queue.poll(), time);
+				if (B.getPassengers().size() == n) {
+					B.start(time);
+					eventList.plan(new Event(2, time + uniform(t5, t6) + uniform(t7, t8)));
+				}
 			}
 		} else {
-			if (queue.size() <= l) {
-				passenger.addToQueue(time);
-				queue.add(passenger);
-			} else {
-				profit -= s;
-			}
+			profit -= s;
 		}
 	}
 
@@ -103,6 +98,7 @@ public class Simulation {
 		for (Passenger passenger : passengers) {
 			passenger.endDrive(time);
 			readyPassengers.add(passenger);
+			profit += s;
 		}
 		A.getPassengers().removeAll(passengers);
 
@@ -114,6 +110,7 @@ public class Simulation {
 		for (Passenger passenger : passengers) {
 			passenger.endDrive(time);
 			readyPassengers.add(passenger);
+			profit += s;
 		}
 		B.getPassengers().removeAll(passengers);
 
@@ -124,21 +121,15 @@ public class Simulation {
 		A.end(time);
 
 		while (A.getPassengers().size() < n && queue.size() > 0) {
-			Passenger passenger = queue.poll();
-			passenger.getToBus(time);
-			A.addPassenger(passenger);
-			profit += s;
+			A.addPassenger(queue.poll(), time);
 		}
 
 		if (A.getPassengers().size() == n) {
 			A.start(time);
 			eventList.plan(new Event(1, time + uniform(t3, t4) + uniform(t7, t8)));
 
-			while (B.getPassengers().size() < n && queue.size() > 0 && A.onRoute()) {
-				Passenger passenger = queue.poll();
-				passenger.getToBus(time);
-				B.addPassenger(passenger);
-				profit += s;
+			while (!B.onRoute() && B.getPassengers().size() < n && queue.size() > 0) {
+				B.addPassenger(queue.poll(), time);
 			}
 
 			if (B.getPassengers().size() == n) {
@@ -152,10 +143,7 @@ public class Simulation {
 		B.end(time);
 
 		while (B.getPassengers().size() < n && queue.size() > 0 && A.onRoute()) {
-			Passenger passenger = queue.poll();
-			passenger.getToBus(time);
-			B.addPassenger(passenger);
-			profit += s;
+			B.addPassenger(queue.poll(), time);
 		}
 
 		if (B.getPassengers().size() == n) {
