@@ -20,7 +20,7 @@ public class Simulation {
 	public static int requestCount = 0;
 
 	public static void main(String[] args) {
-		eventList.plan(new Event(0, exponential(t1)));
+		eventList.plan(new Event(0, erlang(t1, 2)));
 		eventList.plan(new Event(3, simulationTime));
 
 		boolean finish = false;
@@ -67,7 +67,7 @@ public class Simulation {
 	}
 
 	public static void getRequest() {
-		eventList.plan(new Event(0, time + exponential(t1)));
+		eventList.plan(new Event(0, time + erlang(t1, 2)));
 		double callTime = 0;
 		for (int i = 0; i < k; i++) {
 			callTime += t2;
@@ -121,12 +121,17 @@ public class Simulation {
 		return average + random.nextDouble() * 2 * deviation - deviation;
 	}
 
-	public static double exponential(double average) {
+	public static double erlang(double average, int k) {
 		int sign = random.nextInt(2);
+		double mult = 1;
+		for (int i = 0; i < k; i++) {
+			mult *= Math.log(random.nextDouble());
+		}
+
 		if (sign == 0) {
-			return average - Math.log(random.nextDouble());
+			return average - mult;
 		} else {
-			return average + Math.log(random.nextDouble());
+			return average + mult;
 		}
 	}
 
