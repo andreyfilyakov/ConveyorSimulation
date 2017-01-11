@@ -1,18 +1,18 @@
 package ru.ngtu.vst.sim;
 
-public class Machine {
+public class Librarian {
 	private boolean busy = false;
 	private double startTime = 0;
 	private double workTime = 0;
-	private Detail detail = null;
+	private Request request = null;
 
 	public boolean isBusy() {
 		return busy;
 	}
 
-	public void setBusy(boolean busy, double currentTime, Detail detail) {
+	public void setBusy(boolean busy, double currentTime, Request request) {
 		this.busy = busy;
-		this.detail = detail;
+		this.request = request;
 		if (this.busy) {
 			this.startTime = currentTime;
 		} else {
@@ -24,8 +24,8 @@ public class Machine {
 		return this.workTime;
 	}
 	
-	public Detail getDetail()
+	public Request getRequest()
 	{
-		return this.detail;
+		return this.request;
 	}
 }

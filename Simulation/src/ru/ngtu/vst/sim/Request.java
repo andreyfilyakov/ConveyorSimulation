@@ -1,18 +1,18 @@
 package ru.ngtu.vst.sim;
 
-public class Detail {
+public class Request {
 	private double startTime = 0;
 	private double generalTime = 0;
 
-	public Detail(double startTime) {
+	public Request(double startTime) {
 		this.startTime = startTime;
 	}
 
-	public void endTreatment(double time) {
+	public void end(double time) {
 		this.generalTime = time - this.startTime;
 	}
 
-	public double getGeneralTime() {
+	public double getTime() {
 		return this.generalTime;
 	}
 }
